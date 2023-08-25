@@ -31,8 +31,19 @@ app.use(views(__dirname + '/views', {
 
 // logger
 app.use(async (ctx, next) => {
-  const start = new Date()
-  await next()
+  // const start = new Date()
+  log4js.info(`get params:${JSON.stringify(ctx.request.query)} `)
+  log4js.info(`post params:${JSON.stringify(ctx.request.body)} `)
+  await next().catch((err) => {
+    console.log(err);
+    if (err.status == '401') {
+      ctx.status = 200;
+      ctx.body = util.fail('Token认证失败', util.CODE.AUTH_ERROR)
+    } else {
+      throw err;
+    }
+  })
+
   
   /* const ms = new Date() - start
   console.log(`${ctx.method} ${ctx.url} - ${ms}ms`) */
@@ -41,7 +52,7 @@ app.use(async (ctx, next) => {
 // routes
 app.use(index.routes(), index.allowedMethods())
 app.use(users.routes(), users.allowedMethods())
-log4js.info('info output')
+// log4js.info('info output')
 // error-handling
 app.on('error', (err, ctx) => {
   // console.error('server error', err, ctx)
