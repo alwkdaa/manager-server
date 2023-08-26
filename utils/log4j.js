@@ -32,7 +32,7 @@ log4js.configure({
     default: { appenders: ['console'], level: "debug" },
     info:{
       appenders:['info', 'console'],
-      level: 'info0'
+      level: 'info'
     },
     error:{
       appenders: ['error', 'console'],
