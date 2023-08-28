@@ -22,14 +22,15 @@ router.post('/login', async (ctx) => {
     * 2.let res = await User.findOne({ userName, userPwd },{ userId:1,_id:0})  1代表返回，2代表不返回
     * 3.let res = await User.findOne({ userName, userPwd }).select('userId') select里面是返回的数据
     */
-    let res = await User.findOne({ userName, userPwd }, 'userId userName userEmail state role deptId roleList')
-    // 获取到用户数据在res的_doc中
-    const data = res._doc
-    // 生成token
-    const token = jwt.sign({
-      data: data
-    }, 'jason', { expiresIn: '1h' })
+    let res = await User.findOne({ userName, userPwd:md5(userPwd) }, 'userId userName userEmail state role deptId roleList')
+
     if (res) {
+      // 获取到用户数据在res的_doc中
+      const data = res._doc
+      // 生成token
+      const token = jwt.sign({
+        data: data
+      }, 'jason', { expiresIn: '1h' })
       data.token = token
       ctx.body = util.success(data)
     } else {
@@ -106,7 +107,7 @@ router.post('/operate', async (ctx) => {
           mobile
         })
         user.save()
-        ctx.body = util.success({},'用户创建成功')
+        ctx.body = util.success({}, '用户创建成功')
       } catch (error) {
         ctx.body = util.fail(error, stack, '用户新增失败')
       }
