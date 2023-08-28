@@ -6,6 +6,10 @@ const util = require('../utils/util')
 // 引入jwt
 const jwt = require('jsonwebtoken')
 router.prefix('/users')
+// 引入自增长的counter模型
+const Counter = require('../models/counterSchema')
+// 引入md5 密码加密
+const md5 = require('md5')
 
 router.post('/login', async (ctx) => {
   try {
@@ -71,7 +75,7 @@ router.post('/delete', async (ctx) => {
     ctx.body = util.fail('删除失败')
   }
 })
-//编辑接口
+//新增/编辑接口
 router.post('/operate', async (ctx) => {
   const { userId, userName, userEmail, mobile, job, state, roleList, deptId, action } = ctx.request.body
   if (action == 'add') {
@@ -79,19 +83,50 @@ router.post('/operate', async (ctx) => {
       ctx.body = util.fail('参数错误', util.CODE.PARAM_ERROR)
       return
     }
+    // 新增用户，如果用户名
+    const res = await User.findOne({ $or: [{ userName }, { userEmail }] }, '_id userName userEmail')
+    // 如果res为true就是用户名和邮箱重复
+    if (res) {
+      ctx.body = util.fail(`监测到有重复的用户，信息如下${res.userName} - ${res.userEmail}`)
+    } else {
+      try {
+        // 先定义自增长变量
+        const doc = await Counter.findOneAndUpdate({ _id: 'userId' }, { $inc: { sequence_value: 1 } })
+        // 定义添加用户的数据,用户的id通过doc.sequence_value自增长
+        const user = new User({
+          userId: doc.sequence_value,
+          userName,
+          userPwd: md5('123456'),
+          userEmail,
+          role: 1,
+          roleList,
+          state,
+          job,
+          deptId,
+          mobile
+        })
+        user.save()
+        ctx.body = util.success({},'用户创建成功')
+      } catch (error) {
+        ctx.body = util.fail(error, stack, '用户新增失败')
+      }
+
+    }
   } else {
     if (!deptId) {
       ctx.body = util.fail('部门不能为空', util.CODE.PARAM_ERROR)
       return
     }
+    try {
+      const res = await User.findOneAndUpdate({ userId }, { mobile, job, state, roleList, deptId })
+      ctx.body = util.success(res, '更新成功')
+      return
+    } catch (error) {
+      ctx.body = util.fail(res, '更新失败')
+    }
   }
-  try {
-    const res = await User.findOneAndUpdate({ userId }, { mobile, job, state, roleList, deptId })
-    ctx.body = util.success(res,'更新成功')
-    return
-   } catch (error) { 
-    ctx.body = util.fail(res,'更新失败')
-   }
-  
+
+
 })
+
 module.exports = router
