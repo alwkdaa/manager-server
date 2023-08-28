@@ -18,7 +18,7 @@ module.exports = {
    * @param {number} pageNum 页码
    * @param {number} pageSize 每页展示的数据条数
    */
-  pager(pageNum = 1, pageSize = 10) {
+  pager({pageNum = 1, pageSize = 10}) {
     pageNum *= 1
     pageSize *= 1
     const skipIndex = (pageNum - 1) * pageSize
