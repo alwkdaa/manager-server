@@ -2,7 +2,7 @@ const router = require('koa-router')()
 //先引入user的模型
 const User = require('../models/userSchema')
 // 引入公共的结构
-const utils = require('../utils/util')
+const util = require('../utils/util')
 // 引入jwt
 const jwt = require('jsonwebtoken')
 router.prefix('/users')
@@ -27,19 +27,19 @@ router.post('/login', async (ctx) => {
     },'jason', { expiresIn: '1h' })
     if (res) {
       data.token = token
-      ctx.body = utils.success(data)
+      ctx.body = util.success(data)
     } else {
-      ctx.body = utils.fail("用户名或密码错误")
+      ctx.body = util.fail("用户名或密码错误")
     }
   } catch (error) {
-    ctx.body = utils.fail(error.msg)
+    ctx.body = util.fail(error.msg)
   }
 })
 
 // 获取用户列表
 router.get('/list', async (ctx) => {
   const { userId, userName, state } = ctx.request.query
-  const { page, skipIndex } = utils.pager(ctx.request.query)
+  const { page, skipIndex } = util.pager(ctx.request.query)
 
   let params = {}
   if (userId) params.userId = userId
@@ -49,7 +49,7 @@ router.get('/list', async (ctx) => {
     const query =  User.find(params, { _id: 0, userPwd: 0 })
     const list = await query.skip(skipIndex).limit(page.pageSize)
     const total = await User.countDocuments(params)
-    ctx.body = utils.success({
+    ctx.body = util.success({
       page: {
         ...page,
         total,
@@ -57,7 +57,18 @@ router.get('/list', async (ctx) => {
       list
     })
   } catch (error) {
-    ctx.body = utils.fail(`查询异常${error.stack}`)
+    ctx.body = util.fail(`查询异常${error.stack}`)
+  }
+})
+// 删除接口
+router.post('/delete',async (ctx) => {
+  const { userIds } = ctx.request.body
+  const res = await User.updateMany({ userId: { $in: userIds } }, { state: 2})
+  if(res.modifiedCount){
+    ctx.body = util.success(res,`共删除成功${res.modifiedCount} 条`)
+    return
+  }else{
+    ctx.body = util.fail('删除失败')
   }
 })
 module.exports = router
