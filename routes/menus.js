@@ -12,14 +12,50 @@ router.get('/list', async (ctx) => {
   //ctx.request.query 表示从请求上下文中获取查询参数的对象。
   const { menuName, menuState } = ctx.request.query
   const params = {}
-  if(menuName) params.menuName = menuName
-  if(menuState) params.menuState = menuState
+  if (menuName) params.menuName = menuName
+  if (menuState) params.menuState = menuState
   let rootList = await Menu.find(params) || []
-  // const permissionList = getMenuTree(rootList,null,[])
-  ctx.body = util.success(rootList)
+  const permissionList = getMenuTree(rootList, null, [])
+  ctx.body = util.success(permissionList)
 })
 
-
+// 菜单树型结构
+//这个函数基于给定的 rootList、id 和 list 构建一个类似树状结构的数据。
+function getMenuTree(rootList, id, list) {
+  // 遍历 rootList 数组
+  for (let i = 0; i < rootList.length; i++) {
+    let item = rootList[i]
+    // 检查每个项的 parentId 是否与给定的 id 匹配 
+    //item.parentId.slice().pop()的作用是获取item.parentId数组的最后一个元素。
+    /* item.parentId.slice()将item.parentId数组进行浅拷贝，得到一个新的数组。
+    .pop()从新的数组中移除并返回最后一个元素。
+    所以，item.parentId.slice().pop()的结果就是item.parentId数组的最后一个元素。 */
+    // console.log(item._doc)
+    console.log(String(id))
+    console.log(String(item.parentId.slice().pop()))
+    console.log(list)
+    if (String(item.parentId.slice().pop()) == String(id)) {
+      // 将项添加到 list 数组中 这里doc就是里面响应的数据
+      list.push(item._doc)
+    }
+    
+  }
+  
+  // 对每个子项递归调用 getMenuTree，以构建类似树状结构
+  list.map(item => {
+    item.children = []
+    getMenuTree(rootList, item._id, item.children)
+    // 如果子项没有子项，删除 children 属性
+    if (item.children.length == 0) {
+      delete item.children
+    } else if (item.children.length > 0 && item.children[0].menuType == 2){
+      // 如果子项有子项，并且第一个子项的 menuType 为 2，将 action 属性设置为子项的数组
+      item.action = item.children //快速区分按钮和菜单，用于后期做按钮权限
+    }
+  })
+  // 返回 list 数组
+  return list
+}
 
 // 处理对 '/operate' 路径的 POST 请求
 router.post('/operate', async (ctx) => {
