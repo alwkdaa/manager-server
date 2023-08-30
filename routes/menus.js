@@ -35,7 +35,6 @@ function getMenuTree(rootList, id, list) {
       // 将项添加到 list 数组中 这里doc就是里面响应的数据
       list.push(item._doc)
     }
-    console.log(list)
     
   }
   
