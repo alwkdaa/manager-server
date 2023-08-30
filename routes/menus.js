@@ -30,14 +30,12 @@ function getMenuTree(rootList, id, list) {
     /* item.parentId.slice()将item.parentId数组进行浅拷贝，得到一个新的数组。
     .pop()从新的数组中移除并返回最后一个元素。
     所以，item.parentId.slice().pop()的结果就是item.parentId数组的最后一个元素。 */
-    // console.log(item._doc)
-    console.log(String(id))
-    console.log(String(item.parentId.slice().pop()))
-    console.log(list)
+
     if (String(item.parentId.slice().pop()) == String(id)) {
       // 将项添加到 list 数组中 这里doc就是里面响应的数据
       list.push(item._doc)
     }
+    console.log(list)
     
   }
   
