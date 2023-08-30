@@ -40,6 +40,39 @@ router.get('/list', async (ctx) => {
  
 })
 
+router.post('/operate', async (ctx) => {
+  const { _id, roleName, remark, action } = ctx.request.body
+  let res, info
+  try{
+    if(action == 'create'){
+      res = await Roles.create({
+        roleName,
+        remark
+      })
+      info = '创建成功'
+    }else if(action == 'edit'){
+      if(_id){
+        let params = {roleName, remark}
+        params.updateTime = new Date()
+        res = await Roles.findByIdAndUpdate(_id, params)
+      }else {
+        ctx.body = util.fail('缺少参数params:_id')
+        return
+      }
+    }else{
+      if(_id){
+        res = await Roles.findByIdAndDelete(_id)
+        info = '删除成功'
+      }else{
+        ctx.body = util.fail('删除失败')
+        return
+      }
+    }
+    ctx.body = util.success(res, info)
+  }catch(error){
+    ctx.body = util.fail(`操作失败${error.stack}`)
+  }
+})
 
 module.exports = router
 
