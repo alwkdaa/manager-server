@@ -1,6 +1,10 @@
 const router = require('koa-router')()
 //先引入user的模型
 const User = require('../models/userSchema')
+// 引入menu的模型
+const Menu = require('../models/menuSchema')
+// 引入role的模型
+const Role = require('../models/rolesSchema') 
 // 引入公共的结构
 const util = require('../utils/util')
 // 引入jwt
@@ -22,7 +26,7 @@ router.post('/login', async (ctx) => {
     * 2.let res = await User.findOne({ userName, userPwd },{ userId:1,_id:0})  1代表返回，2代表不返回
     * 3.let res = await User.findOne({ userName, userPwd }).select('userId') select里面是返回的数据
     */
-    let res = await User.findOne({ userName, userPwd:md5(userPwd) }, 'userId userName userEmail state role deptId roleList')
+    let res = await User.findOne({ userName, userPwd: md5(userPwd) }, 'userId userName userEmail state role deptId roleList')
 
     if (res) {
       // 获取到用户数据在res的_doc中
@@ -132,11 +136,41 @@ router.post('/operate', async (ctx) => {
 
 // 获取所有用户列表
 router.get('/all/list', async (ctx) => {
-  try{
+  try {
     const list = await User.find({}, "userId userName userEmail")
     ctx.body = util.success(list)
-  }catch(error){
+  } catch (error) {
     ctx.body = util.fail(error.stack)
-  } 
+  }
 })
+
+// 权限接口
+router.get('/getPermissionList', async (ctx) => {
+  // 先获取到签名，解密 从header中获取Authorization 
+  let authorization = ctx.request.headers.authorization
+  let { data } = util.decode(authorization)
+  console.log(data.role)
+  let menuList = await getMenuList(data.role, data.roleList)
+  ctx.body = util.success(menuList)
+})
+
+// 获取菜单列表,根据用户的橘色判断返回的菜单列表
+async function getMenuList(userRole, roleKeys) {
+  let rootList = []
+  if (userRole == 0) {
+    rootList = await Menu.find({}) || []
+  } else {
+    // 要在角色列表中筛选出对应的菜单列表，还要引入role的模型
+    let roleList = await Role.find({ _id: { $in: roleKeys } })
+    let permissionList = []
+    roleList.map(role => {
+      let { checkedKeys, halfCheckedKeys } = role.permissionList
+      permissionList = permissionList.concat(...checkedKeys, ...halfCheckedKeys)
+    })
+    // 去重
+    permissionList = [...new Set(permissionList)]
+    rootList = await Menu.find({ _id: { $in: permissionList } })
+  }
+  return util.getTree(rootList, null, [])
+}
 module.exports = router
