@@ -4,7 +4,7 @@ const User = require('../models/userSchema')
 // 引入menu的模型
 const Menu = require('../models/menuSchema')
 // 引入role的模型
-const Role = require('../models/rolesSchema') 
+const Role = require('../models/rolesSchema')
 // 引入公共的结构
 const util = require('../utils/util')
 // 引入jwt
@@ -14,6 +14,7 @@ router.prefix('/users')
 const Counter = require('../models/counterSchema')
 // 引入md5 密码加密
 const md5 = require('md5')
+const json = require('koa-json')
 
 router.post('/login', async (ctx) => {
   try {
@@ -151,10 +152,11 @@ router.get('/getPermissionList', async (ctx) => {
   let { data } = util.decode(authorization)
   console.log(data.role)
   let menuList = await getMenuList(data.role, data.roleList)
-  ctx.body = util.success(menuList)
+  let actionList = await getActionList(JSON.parse(JSON.stringify(menuList)))
+  ctx.body = util.success({ menuList, actionList })
 })
 
-// 获取菜单列表,根据用户的橘色判断返回的菜单列表
+// 获取菜单列表,根据用户的角色判断返回的菜单列表
 async function getMenuList(userRole, roleKeys) {
   let rootList = []
   if (userRole == 0) {
@@ -172,5 +174,26 @@ async function getMenuList(userRole, roleKeys) {
     rootList = await Menu.find({ _id: { $in: permissionList } })
   }
   return util.getTree(rootList, null, [])
+}
+
+// 获取按钮列表
+function getActionList(list) {
+  //在菜单列表中有children的不一定是按钮，有action的才是按钮
+  const actionList = []
+  const deep = (arr) => {
+    while (arr.length) {
+      let item = arr.pop()
+      if (item.action) {
+        item.action.map(action => {
+          actionList.push(action.menuCode)
+        })
+      }
+      if (item.children && !item.action) {
+        deep(item.children)
+      }
+    }
+  }
+  deep(list)
+  return actionList
 }
 module.exports = router
