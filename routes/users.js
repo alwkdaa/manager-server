@@ -9,12 +9,13 @@ const Role = require('../models/rolesSchema')
 const util = require('../utils/util')
 // 引入jwt
 const jwt = require('jsonwebtoken')
-router.prefix('/users')
+
 // 引入自增长的counter模型
 const Counter = require('../models/counterSchema')
 // 引入md5 密码加密
 const md5 = require('md5')
 const json = require('koa-json')
+router.prefix('/users')
 
 router.post('/login', async (ctx) => {
   try {
@@ -28,8 +29,15 @@ router.post('/login', async (ctx) => {
     * 3.let res = await User.findOne({ userName, userPwd }).select('userId') select里面是返回的数据
     */
     let res = await User.findOne({ userName, userPwd: md5(userPwd) }, 'userId userName userEmail state role deptId roleList')
+    if(!res){
+      res = await User.findOne({ userName, userPwd: userPwd }, 'userId userName userEmail state role deptId roleList')
+      }
 
     if (res) {
+      if(res.state===2){
+        ctx.body = util.fail('该员工已离职')
+        return
+      }
       // 获取到用户数据在res的_doc中
       const data = res._doc
       // 生成token
@@ -114,7 +122,7 @@ router.post('/operate', async (ctx) => {
         user.save()
         ctx.body = util.success({}, '用户创建成功')
       } catch (error) {
-        ctx.body = util.fail(error, stack, '用户新增失败')
+        ctx.body = util.fail(error.stack, '用户新增失败')
       }
 
     }
@@ -152,7 +160,7 @@ router.get('/getPermissionList', async (ctx) => {
   let { data } = util.decode(authorization)
   console.log(data.role)
   let menuList = await getMenuList(data.role, data.roleList)
-  let actionList = await getActionList(JSON.parse(JSON.stringify(menuList)))
+  let actionList = getActionList(JSON.parse(JSON.stringify(menuList)))
   ctx.body = util.success({ menuList, actionList })
 })
 

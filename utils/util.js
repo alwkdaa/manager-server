@@ -53,7 +53,7 @@ module.exports = {
   decode(authorization) {
     if(authorization) {
       // 如果有签名，就获取到token，在登陆的时候就已经将token加到authorization里了
-      const token = authorization.split(' ')[1]
+      let token = authorization.split(' ')[1]
       //给定的token进行验证。
       return jwt.verify(token, 'jason')
     }

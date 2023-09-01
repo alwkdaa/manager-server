@@ -44,37 +44,51 @@ router.get('/list', async (ctx) => {
     ctx.body = util.fail(`查询失败${error.stack}`)
   }
 })
-/* router.get('/count', async (ctx) => {
-    const token = ctx.request.headers.authorization.split(' ')[1]
+router.get('/count', async (ctx) => {
+  let authorization = ctx.request.headers.authorization
+  let { data } = util.decode(authorization)
+  try{
+    let params = {}
+    params.curAuditUserName = data.userName
+    params.$or = [{applyState: 1},{applyState: 2}]
+    const total = await Leave.countDocuments(params)
+    ctx.body = util.success(total)
+  }catch(error){
+    ctx.body = util.fail(`查询异常:${error.message}`)
+  }
+    /* const token = ctx.request.headers.authorization.split(' ')[1]
     const payload = jwt.verify(token, 'jason')
     const total = await Leave.find({auditFlows:{$elemMatch:{userId:payload.data.userId}},curAuditUserName:payload.data.userName,applyState:{$in:[1,2]}})
-    ctx.body = util.success(total.length)
-}) */
+    ctx.body = util.success(total.length) */
+})
 router.post('/operate', async (ctx) => {
   const { _id, action, ...params } = ctx.request.body
   let authorization = ctx.request.headers.authorization
   let { data } = util.decode(authorization)
-  console.log(data);
+  // console.log(data);
   if (action == 'create') {
     let orderNo = 'XJ'
     orderNo += util.formateDate(new Date(), 'yyyyMMdd')
-
     const total = await Leave.countDocuments()
     params.orderNo = orderNo + total
+    console.log(data, 'data')
     // 获取用户当前部门id
     let id = data.deptId.pop()
     // 查找负责人信息
     let dept = await Dept.findById(id)
-   
+    console.log(dept, 'dept')
     // 获取人事部门 和 财务部门负责人信息
     let userList = await Dept.find({ deptName: { $in: ['人事部门', '财务部门'] } })
+    // console.log(dept, 'dept')
     let auditUsers = dept.userName
     let curAuditUserName = dept.userName
+    console.log(dept.userId)
+    // console.log(dept?.dept.userId,"--------------");
     let auditFlows = [
       {
-        userId: dept?.dept.userId,
-        userName: dept?.dept.userName,
-        userEmail: dept?.dept.userEmail
+        userId: dept.userId,
+        userName: dept.userName,
+        userEmail: dept.userEmail
       }
     ]
     userList.map(item => {

@@ -53,7 +53,7 @@ router.post('/update/permission', async (ctx) => {
 
 router.post('/operate', async (ctx) => {
   const { _id, roleName, remark, action } = ctx.request.body
-  let res, info
+  let res, info;
   try{
     if(action == 'create'){
       res = await Roles.create({
@@ -67,7 +67,7 @@ router.post('/operate', async (ctx) => {
         params.updateTime = new Date()
         res = await Roles.findByIdAndUpdate(_id, params)
       }else {
-        ctx.body = util.fail('缺少参数params:_id')
+        ctx.body = util.fail(`缺少参数params:_id`)
         return
       }
     }else{

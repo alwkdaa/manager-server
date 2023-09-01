@@ -43,19 +43,19 @@ log4js.configure({
 
 /* 日志输出 level为debug */
 exports.debug = (content) => {
-  const logger = log4js.getLogger()
+  let logger = log4js.getLogger()
   logger.level = levels.debug
   logger.debug(content) 
 }
 /* 日志输出 level为info */
 exports.info = (content) => {
-  const logger = log4js.getLogger('info')
+  let logger = log4js.getLogger('info')
   logger.level = levels.info
-  logger.info(content) 
+  logger.info(content)
 }
 /* 日志输出 level为error */
 exports.error = (content) => {
-  const logger = log4js.getLogger('error')
+  let logger = log4js.getLogger('error')
   logger.level = levels.error
-  logger.error(content) 
+  logger.error(content)
 }

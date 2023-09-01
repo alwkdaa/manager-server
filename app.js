@@ -4,15 +4,16 @@ const views = require('koa-views')
 const json = require('koa-json')
 const onerror = require('koa-onerror')
 const bodyparser = require('koa-bodyparser')
-// const logger = require('koa-logger')
-// const log4js = require("log4js");
+const logger = require('koa-logger')
+
 
 const log4js = require('./utils/log4j')
+
 const router = require('koa-router')()
 const jwt = require('jsonwebtoken')
 const koajwt = require('koa-jwt')
 const util = require('./utils/util')
-
+// const { verToken } = require('./utils/tokenVerify')
 const users = require('./routes/users')
 const menus = require('./routes/menus')
 const roles = require('./routes/roles')
@@ -58,12 +59,12 @@ app.use(koajwt({ secret: 'jason' }).unless({
   path: [/^\/api\/users\/login/]
 }))
 router.prefix('/api')
-router.get('/leave/count', (ctx) => {
+/* router.get('/leave/count', (ctx) => {
   // 拿到前端携带过来的token进行验证
   const token = ctx.request.headers.authorization.split(' ')[1]
   const payload = jwt.verify(token, 'jason')
   ctx.body = payload
-})
+}) */
 router.use(users.routes(), users.allowedMethods())
 router.use(menus.routes(), menus.allowedMethods())
 router.use(roles.routes(), roles.allowedMethods())
