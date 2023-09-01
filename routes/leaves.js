@@ -1,11 +1,11 @@
- const router = require('koa-router')()
- const util = require('../utils/util')
- const Leave = require('../models/leaveSchema')
- const Dept = require('../models/deptSchema')
- const jwt = require('jsonwebtoken')
+const router = require('koa-router')()
+const util = require('../utils/util')
+const Leave = require('../models/leaveSchema')
+const Dept = require('../models/deptSchema')
+const jwt = require('jsonwebtoken')
 
- router.prefix('/leave')
- // 申请列表
+router.prefix('/leave')
+// 申请列表
 router.get('/list', async (ctx) => {
   const { applyState, type } = ctx.request.query
   let authorization = ctx.request.headers.authorization
@@ -54,25 +54,27 @@ router.post('/operate', async (ctx) => {
   const { _id, action, ...params } = ctx.request.body
   let authorization = ctx.request.headers.authorization
   let { data } = util.decode(authorization)
+  console.log(data);
   if (action == 'create') {
     let orderNo = 'XJ'
     orderNo += util.formateDate(new Date(), 'yyyyMMdd')
+
     const total = await Leave.countDocuments()
     params.orderNo = orderNo + total
     // 获取用户当前部门id
     let id = data.deptId.pop()
     // 查找负责人信息
-    let dept = await Dept.findById(id)   
+    let dept = await Dept.findById(id)
+   
     // 获取人事部门 和 财务部门负责人信息
     let userList = await Dept.find({ deptName: { $in: ['人事部门', '财务部门'] } })
-    console.log(dept.userId)
     let auditUsers = dept.userName
     let curAuditUserName = dept.userName
     let auditFlows = [
       {
-        userId: dept.userId || "",
-        userName: dept.userName || "",
-        userEmail: dept.userEmail || ""
+        userId: dept?.dept.userId,
+        userName: dept?.dept.userName,
+        userEmail: dept?.dept.userEmail
       }
     ]
     userList.map(item => {
@@ -96,17 +98,17 @@ router.post('/operate', async (ctx) => {
     let res = await Leave.create(params)
     ctx.body = util.success("", '创建成功')
   } else {
-    let res =await Leave.findByIdAndUpdate(_id, { applyState: 5 })
-    if(res){
+    let res = await Leave.findByIdAndUpdate(_id, { applyState: 5 })
+    if (res) {
       ctx.body = util.success("", '操作成功')
-    }else{
+    } else {
       ctx.body = util.success("", '操作失败')
     }
   }
 
 })
 
-/* router.post('/approve', async (ctx) => {
+router.post('/approve', async (ctx) => {
   const { action, remark, _id } = ctx.request.body
   let authorization = ctx.request.headers.authorization
   let { data } = util.decode(authorization)
@@ -144,5 +146,5 @@ router.post('/operate', async (ctx) => {
 
   ctx.body = util.success('', '处理成功')
 
-}) */
+})
 module.exports = router
